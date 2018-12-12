@@ -23,6 +23,9 @@ const calcEpisodes = (episodesObject) => {
   episodesObject.forEach(function (item, key) {
     //check each item for a duration, and use "0" in it's place if it isn't set
     const currentEpisodeDuration = (typeof item['itunes:duration'] !== 'undefined') ? item['itunes:duration']['#text'] : "0";
+
+    //convert string to time
+
     console.log(currentEpisodeDuration); // using the [''] notation because I don't know how to work with colons =)
   });
 }
