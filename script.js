@@ -1,7 +1,4 @@
-const button = document.getElementById('btnGetRss');
-
-// handle click and add class
-button.onclick = () => {
+document.getElementById('btnGetRss').onclick = () => {
   xmlhttp.open('GET', 'https://feed.syntax.fm/rss');
   xmlhttp.send();
 }
@@ -14,22 +11,69 @@ xmlhttp.onreadystatechange = function() {
     const xmlDoc = parser.parseFromString(this.responseText,"text/xml");
     const xmlParsed = xmlToJson(xmlDoc);
     const myEpisodes = xmlParsed.rss.channel.item;
-    calcEpisodes(myEpisodes);
+
+    //lets create an array of just the times as seconds.
+    let myEpisodesArray = Array();
+    myEpisodes.forEach((item, index) => {
+      const currentEpisodeDuration = (typeof item['itunes:duration'] !== 'undefined') ? item['itunes:duration']['#text'] : "00:00"; //the hosting & servers episode is missing itunes:duration
+      const currentDurationAsSeconds = convertDurationToSeconds(currentEpisodeDuration);
+      myEpisodesArray.push(currentDurationAsSeconds);
+    });
+
+    //get our results
+    const goodResults = calcEpisodes(myEpisodesArray);
+
+    //display our results
+    //as seconds
+    document.getElementById('sHolder').innerHTML = goodResults;
+
+    //or, as hours insetad
+    document.getElementById('hHolder').innerHTML = parseFloat(goodResults / 60).toFixed(2);
+
+    //or, as days insetad
+    document.getElementById('dHolder').innerHTML = parseFloat(goodResults / 86400).toFixed(2);
   }
 };
 
-//Iterate Thru all episodes
+
+// --------------------------------------------------------------------------------------------
+// HELPER FUNCTIONS
+// --------------------------------------------------------------------------------------------
+//Use reduce to sum all seconds together
 const calcEpisodes = (episodesObject) => {
-  episodesObject.forEach(function (item, key) {
-    //check each item for a duration, and use "0" in it's place if it isn't set
-    const currentEpisodeDuration = (typeof item['itunes:duration'] !== 'undefined') ? item['itunes:duration']['#text'] : "0";
-
-    //convert string to time
-
-    console.log(currentEpisodeDuration); // using the [''] notation because I don't know how to work with colons =)
+  const allTheTimes = episodesObject.reduce((accumulator, currentValue) => {
+    return accumulator + currentValue;
   });
+  
+  return allTheTimes;
 }
 
+//Convert string of time to seconds
+const convertDurationToSeconds = (itunesDuration) => {
+  //split the time into hours, minutes, seconds
+  timeObj = itunesDuration.split(":");
+  //console.log(timeObj);
+
+  let h = 0;
+  let m = 0;
+  let s = 0;
+
+  if (timeObj.length == 3) {
+    h = timeObj[0];
+    m = timeObj[1];
+    s = timeObj[2];
+  } else if (timeObj.length == 2) {
+    h = 0;
+    m = timeObj[0];
+    s = timeObj[1];
+  }
+
+  //calculate time to seconds
+  const combinedTimeAsSeconds = (parseInt(h * 3600) + parseInt(m * 60) + parseInt(s));
+
+  //return combinedTimeAsSeconds;
+  return combinedTimeAsSeconds;
+}
 
 // Changes XML to JSON
 // found function here: https://davidwalsh.name/convert-xml-json
